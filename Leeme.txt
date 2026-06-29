@@ -199,3 +199,14 @@ Consulta el archivo `LICENSE` para más información.
 Gracias a todos los estudiantes, docentes y colaboradores que prueban Biogenios y ayudan a mejorar esta herramienta educativa.
 
 Cada sugerencia contribuye a construir una mejor experiencia de aprendizaje.
+
+
+
+
+## 🌱 ¿Por qué existe Biogenios?
+
+Muchos estudiantes no cuentan con plataformas accesibles para practicar preguntas de admisión desde cualquier lugar.
+
+Biogenios nace con la idea de ofrecer una experiencia sencilla, rápida y centrada en el aprendizaje, aprovechando las tecnologías web para que estudiar sea tan fácil como abrir una página.
+
+El proyecto evolucionará a partir de la experiencia y las necesidades reales de su comunidad de usuarios.
