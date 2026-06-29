@@ -1,0 +1,455 @@
+/* =========================================================
+   BIOGENIOS — Tokens de diseño
+   Paleta: laboratorio botánico nocturno
+   ========================================================= */
+:root {
+  --bg:            #0F1B12;
+  --bg-tarjeta:    #16261A;
+  --bg-tarjeta-2:  #1C2E20;
+  --linea:         #2A4030;
+  --texto:         #EAF3E6;
+  --texto-tenue:   #9FB6A0;
+  --acento:        #7CDB6A;
+  --acento-oscuro: #4FA840;
+  --ambar:         #FFB347;
+  --correcto:      #5FD068;
+  --incorrecto:    #E8543E;
+  --correcto-bg:   rgba(95, 208, 104, 0.14);
+  --incorrecto-bg: rgba(232, 84, 62, 0.14);
+
+  --fuente-display: "Fraunces", serif;
+  --fuente-cuerpo:  "Inter", system-ui, sans-serif;
+
+  --radio: 14px;
+  --sombra: 0 12px 32px rgba(0,0,0,0.35);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--texto);
+  font-family: var(--fuente-cuerpo);
+  min-height: 100vh;
+}
+
+.oculto { display: none !important; }
+
+button { font-family: inherit; cursor: pointer; }
+input { font-family: inherit; }
+
+/* ---------- Botones ---------- */
+.btn {
+  border: none;
+  border-radius: 999px;
+  padding: 0.85rem 1.6rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primario {
+  background: var(--acento);
+  color: #0B1A0D;
+}
+.btn-primario:hover { background: #8FE57E; }
+.btn-secundario {
+  background: transparent;
+  color: var(--texto);
+  border: 1px solid var(--linea);
+}
+.btn-secundario:hover { border-color: var(--acento); }
+.btn-texto {
+  background: none;
+  border: none;
+  color: var(--acento);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.6rem;
+}
+.btn-icono {
+  background: var(--bg-tarjeta-2);
+  border: 1px solid var(--linea);
+  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  font-size: 1rem;
+  display: grid;
+  place-items: center;
+}
+
+.eyebrow {
+  font-family: var(--fuente-cuerpo);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ambar);
+  margin: 0 0 0.6rem 0;
+}
+
+/* =========================================================
+   PANTALLA DE NOMBRE
+   ========================================================= */
+.pantalla-nombre {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: hidden;
+  padding: 1.5rem;
+}
+
+.hero-spore {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 25%, rgba(124,219,106,0.18), transparent 40%),
+    radial-gradient(circle at 82% 70%, rgba(255,179,71,0.10), transparent 45%);
+  pointer-events: none;
+}
+
+.tarjeta-nombre {
+  position: relative;
+  z-index: 1;
+  background: var(--bg-tarjeta);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 2.5rem;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: var(--sombra);
+}
+
+.titulo-marca {
+  font-family: var(--fuente-display);
+  font-size: 2.6rem;
+  font-weight: 900;
+  margin: 0.2rem 0 0.8rem 0;
+  line-height: 1;
+}
+.titulo-marca span { color: var(--acento); }
+
+.subtitulo {
+  color: var(--texto-tenue);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 1.6rem;
+}
+
+#form-nombre { display: flex; flex-direction: column; gap: 0.8rem; }
+#input-nombre {
+  background: var(--bg);
+  border: 1px solid var(--linea);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  color: var(--texto);
+  font-size: 1rem;
+}
+#input-nombre:focus {
+  outline: none;
+  border-color: var(--acento);
+}
+
+/* =========================================================
+   MODAL PREGUNTA DEL DÍA
+   ========================================================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 10, 6, 0.72);
+  display: grid;
+  place-items: center;
+  z-index: 100;
+  padding: 1.5rem;
+}
+.modal-caja {
+  background: var(--bg-tarjeta);
+  border: 1px solid var(--linea);
+  border-top: 3px solid var(--ambar);
+  border-radius: var(--radio);
+  padding: 2rem;
+  max-width: 420px;
+  box-shadow: var(--sombra);
+}
+.modal-caja h2 {
+  font-family: var(--fuente-display);
+  font-size: 1.5rem;
+  margin: 0.2rem 0 0.6rem 0;
+}
+.modal-texto {
+  color: var(--texto-tenue);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  margin-bottom: 1.6rem;
+}
+.modal-acciones {
+  display: flex;
+  gap: 0.7rem;
+  justify-content: flex-end;
+}
+
+/* =========================================================
+   APP / TOPBAR
+   ========================================================= */
+.app { min-height: 100vh; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--linea);
+  background: rgba(15,27,18,0.85);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(6px);
+  flex-wrap: wrap;
+}
+
+.marca-mini {
+  font-family: var(--fuente-display);
+  font-weight: 800;
+  font-size: 1.25rem;
+}
+.marca-mini span { color: var(--acento); }
+
+.nav-modulos {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.nav-modulos button {
+  background: transparent;
+  border: 1px solid var(--linea);
+  color: var(--texto-tenue);
+  border-radius: 999px;
+  padding: 0.5rem 0.95rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.nav-modulos button:hover { border-color: var(--acento); color: var(--texto); }
+.nav-modulos button.activo {
+  background: var(--acento);
+  color: #0B1A0D;
+  border-color: var(--acento);
+}
+
+.usuario-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-left: auto;
+}
+#chip-nombre {
+  font-size: 0.85rem;
+  color: var(--texto-tenue);
+  font-weight: 600;
+}
+
+.contenido {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* =========================================================
+   FICHA DE ESPÉCIMEN (la pregunta)
+   ========================================================= */
+.quiz-encabezado {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.ficha-especimen {
+  background: var(--bg-tarjeta);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 2rem;
+  box-shadow: var(--sombra);
+}
+
+.ficha-especimen h2 {
+  font-family: var(--fuente-display);
+  font-weight: 600;
+  font-size: 1.4rem;
+  line-height: 1.4;
+  margin: 0 0 1.6rem 0;
+}
+
+.alternativas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.alternativa {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: var(--bg-tarjeta-2);
+  border: 1px solid var(--linea);
+  border-left: 4px solid var(--linea);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.alternativa:hover:not(.bloqueada) {
+  border-left-color: var(--acento);
+  background: rgba(124,219,106,0.06);
+}
+.alternativa .marcador {
+  font-weight: 700;
+  color: var(--texto-tenue);
+  font-size: 0.85rem;
+  min-width: 1.4rem;
+}
+.alternativa .texto-alt { flex: 1; font-size: 0.95rem; }
+.alternativa .emoji-resultado { font-size: 1.1rem; }
+
+.alternativa.bloqueada { cursor: default; }
+.alternativa.correcta {
+  border-left-color: var(--correcto);
+  background: var(--correcto-bg);
+}
+.alternativa.correcta .marcador,
+.alternativa.correcta .texto-alt { color: var(--correcto); }
+
+.alternativa.incorrecta {
+  border-left-color: var(--incorrecto);
+  background: var(--incorrecto-bg);
+}
+.alternativa.incorrecta .marcador,
+.alternativa.incorrecta .texto-alt { color: var(--incorrecto); }
+
+.feedback {
+  margin-top: 1.4rem;
+  padding: 1rem 1.2rem;
+  border-radius: 10px;
+  background: var(--bg-tarjeta-2);
+  border-left: 4px solid var(--ambar);
+}
+.feedback#caja-feedback p#feedback-titulo {
+  margin: 0 0 0.3rem 0;
+  font-weight: 700;
+}
+.feedback-texto {
+  margin: 0;
+  color: var(--texto-tenue);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   GRID DE TEMAS
+   ========================================================= */
+.grid-temas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+.tarjeta-tema {
+  background: var(--bg-tarjeta);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 1.2rem;
+  text-align: left;
+  color: var(--texto);
+}
+.tarjeta-tema:hover { border-color: var(--acento); }
+.tarjeta-tema .nombre-tema {
+  font-family: var(--fuente-display);
+  font-weight: 600;
+  font-size: 1.05rem;
+  display: block;
+  margin-bottom: 0.3rem;
+}
+.tarjeta-tema .conteo-tema {
+  color: var(--texto-tenue);
+  font-size: 0.8rem;
+}
+
+/* =========================================================
+   PROGRESO
+   ========================================================= */
+.subtitulo-seccion {
+  font-family: var(--fuente-display);
+  font-size: 1.1rem;
+  margin: 2rem 0 0.8rem 0;
+}
+.tarjetas-progreso {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.8rem;
+}
+.tarjeta-stat {
+  background: var(--bg-tarjeta);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 1.2rem;
+}
+.tarjeta-stat .valor-stat {
+  font-family: var(--fuente-display);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--acento);
+}
+.tarjeta-stat .label-stat {
+  font-size: 0.78rem;
+  color: var(--texto-tenue);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ranking-local {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.ranking-local li {
+  display: flex;
+  justify-content: space-between;
+  background: var(--bg-tarjeta);
+  border: 1px solid var(--linea);
+  border-radius: 10px;
+  padding: 0.7rem 1rem;
+  font-size: 0.9rem;
+}
+.ranking-local .puesto { color: var(--ambar); font-weight: 700; margin-right: 0.6rem; }
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-width: 560px) {
+  .titulo-marca { font-size: 2.1rem; }
+  .ficha-especimen { padding: 1.4rem; }
+  .topbar { padding: 0.8rem 1rem; }
+  .usuario-chip { margin-left: 0; }
+}
+
+/* Accesibilidad: foco visible */
+button:focus-visible,
+input:focus-visible,
+.alternativa:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

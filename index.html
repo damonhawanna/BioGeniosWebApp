@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BIOGENIOS · Cuestionarios de Biología Preuniversitaria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ============ PANTALLA: REGISTRO DE NOMBRE ============ -->
+<section id="pantalla-nombre" class="pantalla pantalla-nombre">
+  <div class="hero-spore" aria-hidden="true"></div>
+  <div class="tarjeta-nombre">
+    <p class="eyebrow">BIOGENIOS · acceso</p>
+    <h1 class="titulo-marca">Bio<span>genios</span></h1>
+    <p class="subtitulo">Cuestionarios de biología preuniversitaria. Antes de empezar, ¿cómo te llamas?</p>
+    <form id="form-nombre" autocomplete="off">
+      <input type="text" id="input-nombre" placeholder="Tu nombre" maxlength="24" required>
+      <button type="submit" class="btn btn-primario">Entrar al laboratorio →</button>
+    </form>
+  </div>
+</section>
+
+<!-- ============ MODAL: PREGUNTA DEL DÍA PENDIENTE ============ -->
+<div id="modal-diario" class="modal-overlay oculto">
+  <div class="modal-caja">
+    <p class="eyebrow">📌 Espécimen del día</p>
+    <h2>Tienes la pregunta del día pendiente</h2>
+    <p class="modal-texto">Cada día hay una pregunta nueva esperándote. Resuélvela ahora o más tarde, como prefieras.</p>
+    <div class="modal-acciones">
+      <button id="btn-modal-mas-tarde" class="btn btn-secundario">Más tarde</button>
+      <button id="btn-modal-resolver" class="btn btn-primario">Resolver ahora</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP PRINCIPAL ============ -->
+<div id="app" class="app oculto">
+
+  <header class="topbar">
+    <div class="marca-mini">Bio<span>genios</span></div>
+    <nav class="nav-modulos" id="nav-modulos"><!-- generado por JS --></nav>
+    <div class="usuario-chip">
+      <span id="chip-nombre">—</span>
+      <button id="btn-progreso" class="btn-icono" title="Mi progreso">📊</button>
+    </div>
+  </header>
+
+  <main class="contenido">
+
+    <!-- ----- VISTA: QUIZ (práctica libre / módulo / pregunta del día) ----- -->
+    <section id="vista-quiz" class="vista">
+      <div class="quiz-encabezado">
+        <p class="eyebrow" id="quiz-eyebrow">MÓDULO · TEMA</p>
+        <button id="btn-siguiente" class="btn btn-texto">Siguiente pregunta ↻</button>
+      </div>
+
+      <article class="ficha-especimen" id="ficha-pregunta">
+        <h2 id="texto-pregunta">Cargando pregunta…</h2>
+        <ul class="alternativas" id="lista-alternativas"><!-- generado por JS --></ul>
+        <div class="feedback oculto" id="caja-feedback">
+          <p id="feedback-titulo"></p>
+          <p id="feedback-texto" class="feedback-texto"></p>
+        </div>
+      </article>
+    </section>
+
+    <!-- ----- VISTA: SELECCIÓN DE TEMA (solo para módulo "temas") ----- -->
+    <section id="vista-temas" class="vista oculto">
+      <p class="eyebrow">🧬 Temas específicos</p>
+      <h2>Elige un tema</h2>
+      <div class="grid-temas" id="grid-temas"><!-- generado por JS --></div>
+    </section>
+
+    <!-- ----- VISTA: PROGRESO ----- -->
+    <section id="vista-progreso" class="vista oculto">
+      <p class="eyebrow">📊 Bitácora personal</p>
+      <h2>Mi progreso</h2>
+      <div class="tarjetas-progreso" id="tarjetas-progreso"><!-- generado por JS --></div>
+      <h3 class="subtitulo-seccion">Mejores sesiones</h3>
+      <ol class="ranking-local" id="ranking-local"><!-- generado por JS --></ol>
+    </section>
+
+  </main>
+</div>
+
+<script src="data/preguntas.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/quiz.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
