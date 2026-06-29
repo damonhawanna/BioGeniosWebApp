@@ -3,15 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BIOGENIOS · Cuestionarios de Biología Preuniversitaria</title>
+<title>BIOGENIOS · Plataforma de Aprendizaje</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- JSZip: necesario para leer archivos .biogenios (zip renombrado) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<!-- ============ PANTALLA: ¿QUIÉN JUGARÁ? (selección de perfil) ============ -->
+<!-- ============ PANTALLA: ¿QUIÉN JUGARÁ? ============ -->
 <section id="pantalla-jugadores" class="pantalla pantalla-jugadores">
   <div class="hero-spore" aria-hidden="true"></div>
   <div class="tarjeta-jugadores">
@@ -38,7 +40,7 @@
   </div>
 </div>
 
-<!-- ============ MODAL: PREGUNTA DEL DÍA PENDIENTE ============ -->
+<!-- ============ MODAL: PREGUNTA DEL DÍA ============ -->
 <div id="modal-diario" class="modal-overlay oculto">
   <div class="modal-caja">
     <p class="eyebrow">📌 Espécimen del día</p>
@@ -56,7 +58,26 @@
 
   <header class="topbar">
     <div class="marca-mini">Bio<span>genios</span></div>
-    <nav class="nav-modulos" id="nav-modulos"><!-- generado por JS --></nav>
+
+    <nav class="nav-principal">
+      <!-- Botones fijos -->
+      <button class="btn-nav" data-vista="libre">🔀 Práctica libre</button>
+      <button class="btn-nav" data-vista="diario">📌 Pregunta del día</button>
+
+      <!-- Dropdown de cursos -->
+      <div class="dropdown-cursos" id="dropdown-cursos">
+        <button class="btn-nav btn-dropdown" id="btn-dropdown-cursos">
+          📚 Cursos <span class="flecha-dropdown">▾</span>
+        </button>
+        <div class="dropdown-menu oculto" id="menu-cursos">
+          <!-- generado por JS -->
+        </div>
+      </div>
+
+      <!-- Instalar laboratorio -->
+      <button class="btn-nav btn-instalar" data-vista="instalar">🔬 Instalar</button>
+    </nav>
+
     <div class="usuario-chip">
       <span id="chip-racha" class="chip-racha" title="Racha de días"></span>
       <span id="chip-nombre">—</span>
@@ -67,16 +88,15 @@
 
   <main class="contenido">
 
-    <!-- ----- VISTA: QUIZ (práctica libre / módulo / pregunta del día) ----- -->
+    <!-- VISTA: QUIZ (práctica libre / curso / pregunta del día) -->
     <section id="vista-quiz" class="vista">
       <div class="quiz-encabezado">
         <p class="eyebrow" id="quiz-eyebrow">MÓDULO · TEMA</p>
         <button id="btn-siguiente" class="btn btn-texto">Siguiente pregunta ↻</button>
       </div>
-
       <article class="ficha-especimen" id="ficha-pregunta">
         <h2 id="texto-pregunta">Cargando pregunta…</h2>
-        <ul class="alternativas" id="lista-alternativas"><!-- generado por JS --></ul>
+        <ul class="alternativas" id="lista-alternativas"></ul>
         <div class="feedback oculto" id="caja-feedback">
           <p id="feedback-titulo"></p>
           <p id="feedback-texto" class="feedback-texto"></p>
@@ -84,27 +104,65 @@
       </article>
     </section>
 
-    <!-- ----- VISTA: SELECCIÓN DE TEMA (solo para módulo "temas") ----- -->
-    <section id="vista-temas" class="vista oculto">
-      <p class="eyebrow">🧬 Temas específicos</p>
-      <h2>Elige un tema</h2>
-      <div class="grid-temas" id="grid-temas"><!-- generado por JS --></div>
+    <!-- VISTA: SIN CURSOS (cuando no hay nada instalado) -->
+    <section id="vista-sin-cursos" class="vista oculto">
+      <div class="estado-vacio">
+        <p class="emoji-vacio">🔬</p>
+        <h2>Tu laboratorio está vacío</h2>
+        <p class="texto-vacio">Instala un curso para empezar a practicar. Puedes subir un archivo <code>.biogenios</code> o generar uno de ejemplo.</p>
+        <button class="btn btn-primario" id="btn-ir-instalar">Ir a Instalar laboratorio →</button>
+      </div>
     </section>
 
-    <!-- ----- VISTA: PROGRESO ----- -->
+    <!-- VISTA: INSTALAR LABORATORIO -->
+    <section id="vista-instalar" class="vista oculto">
+      <p class="eyebrow">🔬 Instalar laboratorio</p>
+      <h2>Cursos instalados</h2>
+
+      <div id="lista-cursos-instalados" class="lista-cursos-instalados">
+        <!-- generado por JS -->
+      </div>
+
+      <div class="zona-instalacion">
+        <h3 class="subtitulo-seccion">Instalar nuevo curso</h3>
+
+        <!-- Zona drag & drop -->
+        <div class="drop-zone" id="drop-zone">
+          <p class="drop-icono">📂</p>
+          <p class="drop-titulo">Arrastra un archivo <code>.biogenios</code> aquí</p>
+          <p class="drop-sub">o</p>
+          <label class="btn btn-secundario" for="input-archivo-curso">
+            Buscar archivo
+          </label>
+          <input type="file" id="input-archivo-curso" accept=".biogenios" class="oculto">
+        </div>
+
+        <!-- Estado de instalación -->
+        <div id="estado-instalacion" class="estado-instalacion oculto"></div>
+
+        <!-- Botón demo: solo visible sin cursos instalados -->
+        <div id="zona-demo" class="zona-demo oculto">
+          <p class="texto-demo">¿No tienes un curso todavía? Genera uno de ejemplo para probar.</p>
+          <button class="btn btn-secundario" id="btn-generar-demo">🧪 Generar curso de ejemplo</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISTA: PROGRESO -->
     <section id="vista-progreso" class="vista oculto">
       <p class="eyebrow">📊 Bitácora personal</p>
       <h2>Mi progreso</h2>
-      <div class="tarjetas-progreso" id="tarjetas-progreso"><!-- generado por JS --></div>
+      <div class="tarjetas-progreso" id="tarjetas-progreso"></div>
       <h3 class="subtitulo-seccion">Mejores sesiones</h3>
-      <ol class="ranking-local" id="ranking-local"><!-- generado por JS --></ol>
+      <ol class="ranking-local" id="ranking-local"></ol>
     </section>
 
   </main>
 </div>
 
-<script src="data/preguntas.js"></script>
+<script src="data/preguntas-ejemplo.js"></script>
 <script src="js/storage.js"></script>
+<script src="js/cursos.js"></script>
 <script src="js/quiz.js"></script>
 <script src="js/app.js"></script>
 </body>

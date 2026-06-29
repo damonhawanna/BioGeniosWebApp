@@ -1,13 +1,11 @@
 /**
- * BIOGENIOS - quiz.js
+ * BIOGENIOS - quiz.js (v0.3)
  * Lógica pura de selección y mezcla de preguntas.
- * No toca el DOM: solo devuelve datos listos para que app.js los renderice.
+ * Ya no usa un banco fijo: todas las preguntas vienen de
+ * Cursos.todasLasPreguntas(), es decir, de los cursos instalados.
  */
 
 const Quiz = {
-  /**
-   * Mezcla un array (Fisher-Yates) sin mutar el original.
-   */
   _mezclar(array) {
     const copia = [...array];
     for (let i = copia.length - 1; i > 0; i--) {
@@ -17,9 +15,6 @@ const Quiz = {
     return copia;
   },
 
-  /**
-   * Genera una semilla numérica simple a partir de un string (nombre+fecha).
-   */
   _semillaDesdeTexto(texto) {
     let hash = 0;
     for (let i = 0; i < texto.length; i++) {
@@ -29,10 +24,6 @@ const Quiz = {
     return Math.abs(hash);
   },
 
-  /**
-   * PRNG simple determinista (mulberry32) para que la pregunta del día
-   * sea distinta por usuario pero estable durante todo el día.
-   */
   _prngDesdeSemilla(semilla) {
     let a = semilla;
     return function () {
@@ -44,20 +35,27 @@ const Quiz = {
   },
 
   /**
-   * Filtra preguntas por módulo (y opcionalmente por tema).
+   * Todas las preguntas disponibles, de todos los cursos instalados.
+   */
+  _todasLasPreguntas() {
+    return Cursos.todasLasPreguntas();
+  },
+
+  /**
+   * Filtra preguntas por módulo (= curso) y opcionalmente por tema.
    */
   filtrarPorModulo(modulo, tema = null) {
-    return PREGUNTAS.filter(p =>
+    return this._todasLasPreguntas().filter(p =>
       p.modulo === modulo && (tema ? p.tema === tema : true)
     );
   },
 
   /**
-   * Devuelve una pregunta aleatoria de TODOS los módulos combinados.
-   * Evita repetir la pregunta anterior (excluirId) si hay más de una disponible.
+   * Pregunta aleatoria de TODOS los cursos instalados combinados.
    */
   preguntaAleatoriaGlobal(excluirId = null) {
-    let pool = PREGUNTAS;
+    let pool = this._todasLasPreguntas();
+    if (pool.length === 0) return null;
     if (excluirId && pool.length > 1) {
       pool = pool.filter(p => p.id !== excluirId);
     }
@@ -66,7 +64,7 @@ const Quiz = {
   },
 
   /**
-   * Devuelve una pregunta aleatoria dentro de un módulo (y tema opcional).
+   * Pregunta aleatoria dentro de un módulo/curso (y tema opcional).
    */
   preguntaAleatoriaDeModulo(modulo, tema = null, excluirId = null) {
     let pool = this.filtrarPorModulo(modulo, tema);
@@ -79,29 +77,23 @@ const Quiz = {
   },
 
   /**
-   * Devuelve la pregunta del día: aleatoria pero determinista para
-   * el par (nombreUsuario, fechaHoy), usando todo el banco de preguntas.
+   * Pregunta del día: aleatoria pero determinista para (usuario, fecha),
+   * usando todas las preguntas de los cursos instalados.
    */
   preguntaDelDia(nombreUsuario, fechaTexto) {
+    const todas = this._todasLasPreguntas();
+    if (todas.length === 0) return null;
     const semilla = this._semillaDesdeTexto(nombreUsuario + fechaTexto);
     const prng = this._prngDesdeSemilla(semilla);
-    const idx = Math.floor(prng() * PREGUNTAS.length);
-    return this._prepararPregunta(PREGUNTAS[idx]);
+    const idx = Math.floor(prng() * todas.length);
+    return this._prepararPregunta(todas[idx]);
   },
 
-  /**
-   * Busca una pregunta ya elegida por su id (para reconstruir la pregunta
-   * del día guardada en localStorage).
-   */
   obtenerPorId(id) {
-    const original = PREGUNTAS.find(p => p.id === id);
+    const original = this._todasLasPreguntas().find(p => p.id === id);
     return original ? this._prepararPregunta(original) : null;
   },
 
-  /**
-   * Toma la pregunta "cruda" del banco y devuelve una versión lista para
-   * mostrar: alternativas mezcladas + índice correcto recalculado.
-   */
   _prepararPregunta(preguntaOriginal) {
     const alternativasConIndice = preguntaOriginal.alternativas.map((texto, i) => ({
       texto,
@@ -115,19 +107,21 @@ const Quiz = {
       tema: preguntaOriginal.tema,
       pregunta: preguntaOriginal.pregunta,
       explicacion: preguntaOriginal.explicacion,
-      alternativas: mezcladas // [{texto, esCorrecta}, ...] ya en orden de presentación
+      alternativas: mezcladas
     };
   },
 
   /**
-   * Lista de temas únicos disponibles en el módulo "temas".
+   * Temas únicos disponibles dentro de un módulo/curso específico.
+   * (En v0.3, "Temas específicos" ya no es un módulo fijo: cada curso
+   * puede tener sus propios temas internos).
    */
-  temasDisponibles() {
-    const temas = this.filtrarPorModulo("temas").map(p => p.tema);
-    const unicos = [...new Set(temas)];
-    return unicos.map(tema => ({
+  temasDeModulo(modulo) {
+    const preguntas = this.filtrarPorModulo(modulo);
+    const temas = [...new Set(preguntas.map(p => p.tema))];
+    return temas.map(tema => ({
       tema,
-      cantidad: PREGUNTAS.filter(p => p.modulo === "temas" && p.tema === tema).length
+      cantidad: preguntas.filter(p => p.tema === tema).length
     }));
   }
 };

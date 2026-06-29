@@ -294,13 +294,15 @@ input { font-family: inherit; }
 }
 .marca-mini span { color: var(--acento); }
 
-.nav-modulos {
+.nav-principal {
   display: flex;
+  align-items: center;
   gap: 0.4rem;
   flex-wrap: wrap;
   flex: 1;
 }
-.nav-modulos button {
+
+.btn-nav {
   background: transparent;
   border: 1px solid var(--linea);
   color: var(--texto-tenue);
@@ -310,12 +312,53 @@ input { font-family: inherit; }
   font-weight: 600;
   white-space: nowrap;
 }
-.nav-modulos button:hover { border-color: var(--acento); color: var(--texto); }
-.nav-modulos button.activo {
+.btn-nav:hover { border-color: var(--acento); color: var(--texto); }
+.btn-nav.activo {
   background: var(--acento);
   color: #0B1A0D;
   border-color: var(--acento);
 }
+.btn-instalar { border-color: var(--ambar); color: var(--ambar); }
+.btn-instalar:hover { background: rgba(255,179,71,0.1); }
+.btn-instalar.activo { background: var(--ambar); color: #1a1000; border-color: var(--ambar); }
+
+/* Dropdown de cursos */
+.dropdown-cursos { position: relative; }
+.btn-dropdown { display: flex; align-items: center; gap: 0.4rem; }
+.flecha-dropdown { font-size: 0.75rem; transition: transform 0.2s; }
+.dropdown-cursos.abierto .flecha-dropdown { transform: rotate(180deg); }
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 220px;
+  background: var(--bg-tarjeta);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  z-index: 50;
+  overflow: hidden;
+}
+.dropdown-item {
+  display: flex;
+  flex-direction: column;
+  padding: 0.7rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--texto);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  width: 100%;
+  border-bottom: 1px solid var(--linea);
+}
+.dropdown-item:last-child { border-bottom: none; }
+.dropdown-item:hover { background: var(--bg-tarjeta-2); color: var(--acento); }
+.dropdown-item.activo { background: rgba(124,219,106,0.1); color: var(--acento); }
+.dropdown-item-sub { font-size: 0.75rem; color: var(--texto-tenue); font-weight: 400; margin-top: 0.15rem; }
+.dropdown-vacio { padding: 0.9rem 1rem; color: var(--texto-tenue); font-size: 0.85rem; }
+
 
 .usuario-chip {
   display: flex;
@@ -510,6 +553,99 @@ input { font-family: inherit; }
 .ranking-local .puesto { color: var(--ambar); font-weight: 700; margin-right: 0.6rem; }
 
 /* =========================================================
+   INSTALAR LABORATORIO
+   ========================================================= */
+.zona-instalacion { margin-top: 2rem; }
+
+.drop-zone {
+  border: 2px dashed var(--linea);
+  border-radius: var(--radio);
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  transition: border-color 0.2s, background 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+.drop-zone.arrastrando {
+  border-color: var(--acento);
+  background: rgba(124,219,106,0.06);
+}
+.drop-icono { font-size: 2.5rem; margin: 0; }
+.drop-titulo { font-weight: 600; margin: 0; }
+.drop-sub { color: var(--texto-tenue); font-size: 0.85rem; margin: 0; }
+
+.estado-instalacion {
+  margin-top: 1rem;
+  padding: 1rem 1.2rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.estado-instalacion.ok { background: var(--correcto-bg); color: var(--correcto); border-left: 4px solid var(--correcto); }
+.estado-instalacion.error { background: var(--incorrecto-bg); color: var(--incorrecto); border-left: 4px solid var(--incorrecto); }
+.estado-instalacion.cargando { background: var(--bg-tarjeta-2); color: var(--texto-tenue); border-left: 4px solid var(--linea); }
+
+.zona-demo {
+  margin-top: 1.5rem;
+  padding: 1.2rem;
+  border: 1px dashed var(--ambar);
+  border-radius: var(--radio);
+  background: rgba(255,179,71,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.texto-demo { margin: 0; color: var(--texto-tenue); font-size: 0.88rem; flex: 1; }
+
+/* Lista de cursos instalados */
+.lista-cursos-instalados {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+.tarjeta-curso-instalado {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--bg-tarjeta);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 1rem 1.2rem;
+}
+.curso-info { flex: 1; }
+.curso-nombre { font-weight: 700; font-size: 0.95rem; }
+.curso-meta { font-size: 0.78rem; color: var(--texto-tenue); margin-top: 0.2rem; }
+.btn-desinstalar {
+  background: transparent;
+  border: 1px solid var(--incorrecto);
+  color: var(--incorrecto);
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.btn-desinstalar:hover { background: var(--incorrecto-bg); }
+
+/* Estado vacío */
+.estado-vacio {
+  text-align: center;
+  padding: 4rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+}
+.emoji-vacio { font-size: 3.5rem; margin: 0; }
+.estado-vacio h2 { margin: 0; font-family: var(--fuente-display); }
+.texto-vacio { color: var(--texto-tenue); max-width: 380px; line-height: 1.5; margin: 0; }
+
+/* =========================================================
    RESPONSIVE
    ========================================================= */
 @media (max-width: 560px) {
@@ -517,6 +653,7 @@ input { font-family: inherit; }
   .ficha-especimen { padding: 1.4rem; }
   .topbar { padding: 0.8rem 1rem; }
   .usuario-chip { margin-left: 0; }
+  .dropdown-menu { left: auto; right: 0; }
 }
 
 /* Accesibilidad: foco visible */

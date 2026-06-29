@@ -30,7 +30,16 @@ const Storage = {
   // ---------------------------------------------------------
   _leerData() {
     const raw = localStorage.getItem(BIOGENIOS_DATA_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const data = JSON.parse(raw);
+      // Migración suave v0.2 -> v0.3: si ya existía BIOGENIOS_DATA pero sin cursosInstalados, se agrega.
+      if (!Array.isArray(data.cursosInstalados)) {
+        data.cursosInstalados = [];
+        data.version = "0.3";
+        this._guardarData(data);
+      }
+      return data;
+    }
 
     // No existe aún: intentar migrar desde v0.1, o crear estructura vacía.
     const migrada = this._migrarDesdeV01();
@@ -56,7 +65,7 @@ const Storage = {
   _migrarDesdeV01() {
     const nombreViejo = localStorage.getItem(CLAVES_LEGADAS.NOMBRE);
 
-    const dataNueva = { version: "0.2", jugadorActivoId: null, jugadores: [] };
+    const dataNueva = { version: "0.3", jugadorActivoId: null, jugadores: [], cursosInstalados: [] };
 
     if (!nombreViejo) return dataNueva;
 
@@ -223,5 +232,28 @@ const Storage = {
   obtenerSesiones() {
     const jugador = this.obtenerJugadorActivo();
     return jugador ? jugador.sesiones : [];
+  },
+
+  // ---------------------------------------------------------
+  // Cursos instalados (.biogenios) — v0.3
+  // ---------------------------------------------------------
+  obtenerCursosInstalados() {
+    return this._leerData().cursosInstalados;
+  },
+  instalarCurso(curso) {
+    const data = this._leerData();
+    const yaExiste = data.cursosInstalados.some(c => c.id === curso.id);
+    if (yaExiste) {
+      data.cursosInstalados = data.cursosInstalados.map(c => c.id === curso.id ? curso : c);
+    } else {
+      data.cursosInstalados.push(curso);
+    }
+    this._guardarData(data);
+    return curso;
+  },
+  desinstalarCurso(idCurso) {
+    const data = this._leerData();
+    data.cursosInstalados = data.cursosInstalados.filter(c => c.id !== idCurso);
+    this._guardarData(data);
   }
 };
