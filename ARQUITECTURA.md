@@ -1,3 +1,6 @@
+BIOGENIOS no nace para almacenar preguntas. Nace para despertar la curiosidad. Creemos que aprender puede sentirse como explorar un videojuego, donde cada descubrimiento motiva al siguiente. Nuestro trabajo no es crear todo el contenido, sino construir el mejor laboratorio para que educadores y estudiantes creen, compartan y vivan experiencias de aprendizaje memorables.
+
+
 # 🧬 ARQUITECTURA.md
 # BIOGENIOS · Arquitectura del Proyecto
 
