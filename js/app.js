@@ -1,15 +1,16 @@
 /**
- * BIOGENIOS - app.js
- * Orquesta la navegación entre vistas y conecta Storage + Quiz con el DOM.
+ * BIOGENIOS - app.js (v0.2)
+ * Orquesta navegación, vistas y conecta Storage + Quiz con el DOM.
+ * Ahora trabaja sobre el "jugador activo" en vez de un nombre único.
  */
 
 const Estado = {
-  nombre: "",
-  moduloActivo: "libre",   // "libre" | "verano" | "semestral1" | "semestral2" | "temas" | "diario"
+  jugador: null,
+  moduloActivo: "libre",
   temaActivo: null,
   preguntaActual: null,
   respondida: false,
-  sesion: { aciertos: 0, total: 0 } // contador de la sesión actual (para "mejores sesiones")
+  sesion: { aciertos: 0, total: 0 }
 };
 
 const NOMBRES_MODULO = {
@@ -25,31 +26,103 @@ const NOMBRES_MODULO = {
 // Inicio
 // ---------------------------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
-  const nombreGuardado = Storage.obtenerNombre();
-  if (nombreGuardado) {
-    Estado.nombre = nombreGuardado;
-    iniciarApp();
-  } else {
-    mostrarPantallaNombre();
-  }
+  mostrarPantallaJugadores();
 });
 
-function mostrarPantallaNombre() {
-  document.getElementById("pantalla-nombre").classList.remove("oculto");
-  document.getElementById("form-nombre").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const valor = document.getElementById("input-nombre").value.trim();
-    if (!valor) return;
-    Storage.guardarNombre(valor);
-    Estado.nombre = valor;
-    document.getElementById("pantalla-nombre").classList.add("oculto");
-    iniciarApp();
-  });
+// ---------------------------------------------------------------
+// Pantalla "¿Quién juega?"
+// ---------------------------------------------------------------
+function mostrarPantallaJugadores() {
+  document.getElementById("app").classList.add("oculto");
+  document.getElementById("pantalla-jugadores").classList.remove("oculto");
+  renderizarGridPerfiles();
 }
 
+function renderizarGridPerfiles() {
+  const grid = document.getElementById("grid-perfiles");
+  const jugadores = Storage.obtenerJugadores();
+
+  let html = jugadores.map(j => `
+    <button class="tarjeta-perfil" data-id="${j.id}">
+      <span class="avatar-perfil">${j.avatar}</span>
+      <span class="nombre-perfil">${j.nombre}</span>
+      <span class="racha-perfil">🔥 ${j.racha.actual} día${j.racha.actual !== 1 ? "s" : ""}</span>
+    </button>
+  `).join("");
+
+  if (Storage.puedeCrearJugador()) {
+    html += `
+      <button class="tarjeta-perfil tarjeta-nueva" id="btn-nuevo-jugador">
+        <span class="avatar-perfil">➕</span>
+        <span class="nombre-perfil">Nuevo jugador</span>
+      </button>
+    `;
+  }
+
+  grid.innerHTML = html;
+
+  grid.querySelectorAll(".tarjeta-perfil[data-id]").forEach(btn => {
+    btn.addEventListener("click", () => seleccionarJugadorYEntrar(btn.dataset.id));
+  });
+
+  const btnNuevo = document.getElementById("btn-nuevo-jugador");
+  if (btnNuevo) btnNuevo.addEventListener("click", abrirModalCrearJugador);
+}
+
+function seleccionarJugadorYEntrar(id) {
+  const jugador = Storage.seleccionarJugador(id);
+  if (!jugador) return;
+  Estado.jugador = jugador;
+  document.getElementById("pantalla-jugadores").classList.add("oculto");
+  iniciarApp();
+}
+
+// ---------------------------------------------------------------
+// Modal: crear jugador
+// ---------------------------------------------------------------
+let avatarSeleccionado = null;
+
+function abrirModalCrearJugador() {
+  const modal = document.getElementById("modal-crear-jugador");
+  const grid = document.getElementById("grid-avatares");
+  const avatares = Storage.avataresDisponibles();
+
+  avatarSeleccionado = avatares[0];
+  grid.innerHTML = avatares.map((a, i) => `
+    <button type="button" class="opcion-avatar ${i === 0 ? "seleccionado" : ""}" data-avatar="${a}">${a}</button>
+  `).join("");
+
+  grid.querySelectorAll(".opcion-avatar").forEach(btn => {
+    btn.addEventListener("click", () => {
+      grid.querySelectorAll(".opcion-avatar").forEach(b => b.classList.remove("seleccionado"));
+      btn.classList.add("seleccionado");
+      avatarSeleccionado = btn.dataset.avatar;
+    });
+  });
+
+  document.getElementById("input-nombre-jugador").value = "";
+  modal.classList.remove("oculto");
+
+  document.getElementById("btn-cancelar-jugador").onclick = () => modal.classList.add("oculto");
+
+  document.getElementById("form-crear-jugador").onsubmit = (e) => {
+    e.preventDefault();
+    const nombre = document.getElementById("input-nombre-jugador").value.trim();
+    if (!nombre) return;
+    const nuevo = Storage.crearJugador(nombre, avatarSeleccionado);
+    modal.classList.add("oculto");
+    Estado.jugador = nuevo;
+    document.getElementById("pantalla-jugadores").classList.add("oculto");
+    iniciarApp();
+  };
+}
+
+// ---------------------------------------------------------------
+// App principal (una vez elegido el jugador)
+// ---------------------------------------------------------------
 function iniciarApp() {
   document.getElementById("app").classList.remove("oculto");
-  document.getElementById("chip-nombre").textContent = `👤 ${Estado.nombre}`;
+  actualizarChipJugador();
 
   construirNavModulos();
   construirGridTemas();
@@ -57,6 +130,13 @@ function iniciarApp() {
 
   revisarPreguntaDelDia();
   cambiarVista("libre");
+}
+
+function actualizarChipJugador() {
+  document.getElementById("chip-nombre").textContent = `${Estado.jugador.avatar} ${Estado.jugador.nombre}`;
+  const racha = Storage.obtenerRacha();
+  document.getElementById("chip-racha").textContent = `🔥 ${racha.actual}`;
+  document.getElementById("chip-racha").title = `Racha actual: ${racha.actual} día(s) · Mejor racha: ${racha.mejor}`;
 }
 
 // ---------------------------------------------------------------
@@ -89,6 +169,10 @@ function marcarBotonActivo(moduloId) {
 function enlazarEventosGlobales() {
   document.getElementById("btn-progreso").addEventListener("click", () => mostrarVistaProgreso());
   document.getElementById("btn-siguiente").addEventListener("click", () => siguientePregunta());
+  document.getElementById("btn-cambiar-jugador").addEventListener("click", () => {
+    document.getElementById("app").classList.add("oculto");
+    mostrarPantallaJugadores();
+  });
 }
 
 // ---------------------------------------------------------------
@@ -164,7 +248,6 @@ function cargarNuevaPregunta() {
 
 function siguientePregunta() {
   if (Estado.moduloActivo === "diario") {
-    // La pregunta del día es única: "siguiente" regresa a práctica libre.
     cambiarVista("libre");
     return;
   }
@@ -219,7 +302,6 @@ function seleccionarAlternativa(index) {
   const seleccionada = p.alternativas[index];
   const esCorrecta = seleccionada.esCorrecta;
 
-  // Pintar todas las alternativas: marcar la correcta siempre, y la elegida si es incorrecta
   document.querySelectorAll(".alternativa").forEach((li, i) => {
     li.classList.add("bloqueada");
     const emoji = li.querySelector(".emoji-resultado");
@@ -232,7 +314,6 @@ function seleccionarAlternativa(index) {
     }
   });
 
-  // Feedback / explicación
   const cajaFeedback = document.getElementById("caja-feedback");
   const titulo = document.getElementById("feedback-titulo");
   const texto = document.getElementById("feedback-texto");
@@ -240,17 +321,20 @@ function seleccionarAlternativa(index) {
   texto.textContent = p.explicacion;
   cajaFeedback.classList.remove("oculto");
 
-  // Guardar progreso
-  const moduloParaProgreso = Estado.moduloActivo === "libre" ? p.modulo : Estado.moduloActivo;
-  Storage.registrarRespuesta(moduloParaProgreso === "diario" ? p.modulo : moduloParaProgreso, esCorrecta);
+  const moduloParaProgreso = Estado.moduloActivo === "libre" || Estado.moduloActivo === "diario"
+    ? p.modulo
+    : Estado.moduloActivo;
+  Storage.registrarRespuesta(moduloParaProgreso, esCorrecta);
 
   Estado.sesion.total += 1;
   if (esCorrecta) Estado.sesion.aciertos += 1;
-  Storage.guardarSesion(Estado.nombre, Estado.sesion.aciertos, Estado.sesion.total);
+  Storage.guardarSesion(Estado.sesion.aciertos, Estado.sesion.total);
 
   if (Estado.moduloActivo === "diario") {
     Storage.marcarDiariaResuelta();
   }
+
+  actualizarChipJugador(); // refleja racha actualizada al instante
 }
 
 // ---------------------------------------------------------------
@@ -260,7 +344,7 @@ function revisarPreguntaDelDia() {
   let estadoDiario = Storage.obtenerEstadoDiario();
 
   if (!estadoDiario.preguntaId) {
-    const pregunta = Quiz.preguntaDelDia(Estado.nombre, estadoDiario.fecha);
+    const pregunta = Quiz.preguntaDelDia(Estado.jugador.nombre, estadoDiario.fecha);
     estadoDiario = Storage.asignarPreguntaDiaria(pregunta.id);
   }
 
@@ -302,6 +386,15 @@ function renderizarProgreso() {
     `;
   }).join("");
 
+  const racha = Storage.obtenerRacha();
+  contenedor.innerHTML += `
+    <div class="tarjeta-stat">
+      <div class="valor-stat">🔥 ${racha.actual}</div>
+      <div class="label-stat">Racha actual</div>
+      <div class="label-stat">Mejor: ${racha.mejor} días</div>
+    </div>
+  `;
+
   const sesiones = Storage.obtenerSesiones();
   const ranking = document.getElementById("ranking-local");
   if (sesiones.length === 0) {
@@ -310,7 +403,7 @@ function renderizarProgreso() {
   }
   ranking.innerHTML = sesiones.map((s, i) => `
     <li>
-      <span><span class="puesto">#${i + 1}</span>${s.nombre} — ${s.fecha}</span>
+      <span><span class="puesto">#${i + 1}</span>${Estado.jugador.avatar} ${Estado.jugador.nombre} — ${s.fecha}</span>
       <span>${s.aciertos}/${s.total} (${Math.round((s.aciertos / s.total) * 100)}%)</span>
     </li>
   `).join("");

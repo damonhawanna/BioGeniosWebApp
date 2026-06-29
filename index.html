@@ -11,19 +11,32 @@
 </head>
 <body>
 
-<!-- ============ PANTALLA: REGISTRO DE NOMBRE ============ -->
-<section id="pantalla-nombre" class="pantalla pantalla-nombre">
+<!-- ============ PANTALLA: ¿QUIÉN JUGARÁ? (selección de perfil) ============ -->
+<section id="pantalla-jugadores" class="pantalla pantalla-jugadores">
   <div class="hero-spore" aria-hidden="true"></div>
-  <div class="tarjeta-nombre">
-    <p class="eyebrow">BIOGENIOS · acceso</p>
-    <h1 class="titulo-marca">Bio<span>genios</span></h1>
-    <p class="subtitulo">Cuestionarios de biología preuniversitaria. Antes de empezar, ¿cómo te llamas?</p>
-    <form id="form-nombre" autocomplete="off">
-      <input type="text" id="input-nombre" placeholder="Tu nombre" maxlength="24" required>
-      <button type="submit" class="btn btn-primario">Entrar al laboratorio →</button>
-    </form>
+  <div class="tarjeta-jugadores">
+    <p class="eyebrow">BIOGENIOS · selección de jugador</p>
+    <h1 class="titulo-marca">¿Quién <span>juega</span>?</h1>
+    <div class="grid-perfiles" id="grid-perfiles"><!-- generado por JS --></div>
   </div>
 </section>
+
+<!-- ============ MODAL: CREAR JUGADOR ============ -->
+<div id="modal-crear-jugador" class="modal-overlay oculto">
+  <div class="modal-caja">
+    <p class="eyebrow">➕ Nuevo jugador</p>
+    <h2>Crea tu perfil</h2>
+    <form id="form-crear-jugador" autocomplete="off">
+      <input type="text" id="input-nombre-jugador" placeholder="Nombre del jugador" maxlength="18" required>
+      <p class="label-avatares">Elige un avatar</p>
+      <div class="grid-avatares" id="grid-avatares"><!-- generado por JS --></div>
+      <div class="modal-acciones">
+        <button type="button" id="btn-cancelar-jugador" class="btn btn-secundario">Cancelar</button>
+        <button type="submit" class="btn btn-primario">Crear jugador</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <!-- ============ MODAL: PREGUNTA DEL DÍA PENDIENTE ============ -->
 <div id="modal-diario" class="modal-overlay oculto">
@@ -45,8 +58,10 @@
     <div class="marca-mini">Bio<span>genios</span></div>
     <nav class="nav-modulos" id="nav-modulos"><!-- generado por JS --></nav>
     <div class="usuario-chip">
+      <span id="chip-racha" class="chip-racha" title="Racha de días"></span>
       <span id="chip-nombre">—</span>
       <button id="btn-progreso" class="btn-icono" title="Mi progreso">📊</button>
+      <button id="btn-cambiar-jugador" class="btn-icono" title="Cambiar de jugador">🔄</button>
     </div>
   </header>
 
