@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BIOGENIOS · Panel del Profe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<!-- ============ PANTALLA: LOGIN ============ -->
+<section id="pantalla-login" class="pantalla-login">
+  <div class="login-tarjeta">
+    <p class="eyebrow">BIOGENIOS · acceso restringido</p>
+    <h1 class="login-titulo">Panel del <span>Profe</span></h1>
+    <p class="login-sub">Solo el instructor autorizado puede crear y editar cursos.</p>
+    <form id="form-login" autocomplete="off">
+      <input type="password" id="input-password" placeholder="Contraseña" required>
+      <p class="login-error oculto" id="login-error">Contraseña incorrecta</p>
+      <button type="submit" class="btn btn-primario btn-ancho">Entrar</button>
+    </form>
+  </div>
+</section>
+
+<!-- ============ EDITOR (oculto hasta login) ============ -->
+<div id="editor" class="editor oculto">
+
+  <!-- Topbar del admin -->
+  <header class="admin-topbar">
+    <div class="marca-mini">Bio<span>genios</span></div>
+    <span class="admin-badge">👨‍🏫 Panel del Profe</span>
+    <div class="admin-topbar-acciones">
+      <button class="btn btn-secundario" id="btn-nuevo-curso">+ Nuevo curso</button>
+      <button class="btn btn-primario" id="btn-exportar">📦 Exportar .biogenios</button>
+    </div>
+  </header>
+
+  <div class="admin-layout">
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-seccion">
+        <p class="eyebrow">Datos del curso</p>
+        <form id="form-curso" autocomplete="off">
+          <label class="campo">
+            <span class="campo-label">Nombre del curso</span>
+            <input type="text" id="campo-nombre" placeholder="Ej: Biología General" required>
+          </label>
+          <label class="campo">
+            <span class="campo-label">Autor</span>
+            <input type="text" id="campo-autor" placeholder="Ej: Prof. Lex" value="Prof. Lex">
+          </label>
+          <label class="campo">
+            <span class="campo-label">Módulo (id interno)</span>
+            <input type="text" id="campo-modulo" placeholder="Ej: bio_gen" required>
+          </label>
+          <label class="campo">
+            <span class="campo-label">Descripción</span>
+            <textarea id="campo-descripcion" rows="2" placeholder="Breve descripción del curso"></textarea>
+          </label>
+          <label class="campo">
+            <span class="campo-label">Versión</span>
+            <input type="text" id="campo-version" value="1.0">
+          </label>
+        </form>
+      </div>
+
+      <div class="sidebar-seccion">
+        <p class="eyebrow">Preguntas (<span id="contador-preguntas">0</span>)</p>
+        <ul class="lista-preguntas" id="lista-preguntas">
+          <!-- generado por JS -->
+        </ul>
+        <button class="btn btn-texto btn-agregar-pregunta" id="btn-agregar-pregunta">+ Agregar pregunta</button>
+      </div>
+
+      <div class="sidebar-seccion">
+        <p class="eyebrow">Carga masiva</p>
+
+        <p class="texto-ayuda">📊 Desde Excel: descargá la plantilla, completala y volvela a subir.</p>
+        <button class="btn btn-ancho-texto" id="btn-descargar-plantilla" type="button">⬇️ Descargar plantilla (.xlsx)</button>
+        <label class="btn btn-secundario btn-ancho" for="input-excel">📊 Cargar Excel</label>
+        <input type="file" id="input-excel" accept=".xlsx,.xls" class="oculto">
+        <div id="estado-excel" class="estado-json oculto"></div>
+
+        <p class="texto-ayuda texto-ayuda-separado">📄 O subí un archivo .json con un array de preguntas.</p>
+        <label class="btn btn-secundario btn-ancho" for="input-json">📄 Subir JSON</label>
+        <input type="file" id="input-json" accept=".json" class="oculto">
+        <div id="estado-json" class="estado-json oculto"></div>
+      </div>
+
+      <div class="sidebar-seccion">
+        <p class="eyebrow">Borrador</p>
+        <div class="borrador-acciones">
+          <button class="btn btn-texto" id="btn-guardar-borrador">💾 Guardar borrador</button>
+          <button class="btn btn-texto btn-texto-peligro" id="btn-cargar-borrador">📂 Cargar borrador</button>
+          <button class="btn btn-texto btn-texto-peligro" id="btn-limpiar-borrador">🗑 Limpiar borrador</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ===== ÁREA PRINCIPAL: EDITOR DE PREGUNTA ===== -->
+    <main class="admin-main">
+
+      <!-- Estado vacío -->
+      <div class="estado-vacio-editor" id="estado-vacio-editor">
+        <p class="emoji-vacio">📝</p>
+        <h2>Elegí una pregunta o creá una nueva</h2>
+        <p class="texto-vacio">Usá la barra lateral para agregar preguntas al curso.</p>
+      </div>
+
+      <!-- Formulario de pregunta -->
+      <form id="form-pregunta" class="form-pregunta oculto" autocomplete="off">
+        <p class="eyebrow" id="pregunta-titulo-eyebrow">PREGUNTA NUEVA</p>
+
+        <label class="campo campo-grande">
+          <span class="campo-label">Texto de la pregunta</span>
+          <textarea id="campo-texto-pregunta" rows="3" placeholder="Escribí la pregunta aquí..." required></textarea>
+        </label>
+
+        <label class="campo">
+          <span class="campo-label">Tema / Categoría</span>
+          <input type="text" id="campo-tema" placeholder="Ej: Citología, Genética...">
+        </label>
+
+        <div class="campo">
+          <span class="campo-label">Alternativas (seleccioná la correcta)</span>
+          <div class="alternativas-editor" id="alternativas-editor">
+            <div class="alternativa-fila">
+              <input type="radio" name="correcta" value="0" checked>
+              <input type="text" class="input-alternativa" placeholder="Alternativa A" required>
+              <button type="button" class="btn-eliminar-alt oculto" title="Eliminar">×</button>
+            </div>
+            <div class="alternativa-fila">
+              <input type="radio" name="correcta" value="1">
+              <input type="text" class="input-alternativa" placeholder="Alternativa B" required>
+              <button type="button" class="btn-eliminar-alt oculto" title="Eliminar">×</button>
+            </div>
+            <div class="alternativa-fila">
+              <input type="radio" name="correcta" value="2">
+              <input type="text" class="input-alternativa" placeholder="Alternativa C" required>
+              <button type="button" class="btn-eliminar-alt oculto" title="Eliminar">×</button>
+            </div>
+            <div class="alternativa-fila">
+              <input type="radio" name="correcta" value="3">
+              <input type="text" class="input-alternativa" placeholder="Alternativa D" required>
+              <button type="button" class="btn-eliminar-alt oculto" title="Eliminar">×</button>
+            </div>
+          </div>
+          <button type="button" class="btn btn-texto" id="btn-agregar-alternativa">+ Otra alternativa</button>
+        </div>
+
+        <label class="campo">
+          <span class="campo-label">Explicación (opcional)</span>
+          <textarea id="campo-explicacion" rows="2" placeholder="Explicación de la respuesta correcta..."></textarea>
+        </label>
+
+        <div class="form-acciones">
+          <button type="button" class="btn btn-secundario" id="btn-cancelar-pregunta">Cancelar</button>
+          <button type="submit" class="btn btn-primario" id="btn-guardar-pregunta">Guardar pregunta</button>
+        </div>
+      </form>
+
+    </main>
+
+  </div>
+</div>
+
+<!-- Modal de confirmación -->
+<div id="modal-confirmar" class="modal-overlay oculto">
+  <div class="modal-caja">
+    <p class="eyebrow" id="modal-confirmar-eyebrow">CONFIRMACIÓN</p>
+    <h2 id="modal-confirmar-titulo">¿Estás seguro?</h2>
+    <p class="modal-texto" id="modal-confirmar-texto"></p>
+    <div class="modal-acciones">
+      <button class="btn btn-secundario" id="btn-modal-cancelar">Cancelar</button>
+      <button class="btn btn-primario" id="btn-modal-confirmar">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/admin.js"></script>
+</body>
+</html>

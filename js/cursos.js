@@ -85,7 +85,20 @@ const Cursos = {
     this._validarManifest(manifest);
     this._validarPreguntas(preguntas);
 
-    return this._instalarDesdeDatos(manifest, preguntas);
+    const curso = this._instalarDesdeDatos(manifest, preguntas);
+
+    // Registrar en el historial de subidas manuales (no aplica al curso de ejemplo)
+    Storage.registrarHistorialCursoManual({
+      id: curso.id,
+      nombre: curso.nombre,
+      autor: curso.autor,
+      version: curso.version,
+      modulo: curso.modulo,
+      numPreguntas: curso.preguntas.length,
+      fecha: Storage.fechaHoy()
+    });
+
+    return curso;
   },
 
   _validarManifest(manifest) {

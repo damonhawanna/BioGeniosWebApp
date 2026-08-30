@@ -37,6 +37,10 @@ const Storage = {
         data.cursosInstalados = [];
         huboMigracion = true;
       }
+      if (!Array.isArray(data.historialCursosManuales)) {
+        data.historialCursosManuales = [];
+        huboMigracion = true;
+      }
       data.jugadores.forEach(j => {
         if (typeof j.xp !== "number") { j.xp = 0; huboMigracion = true; }
         if (!Array.isArray(j.insignias)) { j.insignias = []; huboMigracion = true; }
@@ -73,7 +77,7 @@ const Storage = {
   _migrarDesdeV01() {
     const nombreViejo = localStorage.getItem(CLAVES_LEGADAS.NOMBRE);
 
-    const dataNueva = { version: "0.3", jugadorActivoId: null, jugadores: [], cursosInstalados: [] };
+    const dataNueva = { version: "0.3", jugadorActivoId: null, jugadores: [], cursosInstalados: [], historialCursosManuales: [] };
 
     if (!nombreViejo) return dataNueva;
 
@@ -269,6 +273,24 @@ const Storage = {
     const data = this._leerData();
     data.cursosInstalados = data.cursosInstalados.filter(c => c.id !== idCurso);
     this._guardarData(data);
+  },
+
+  // ---------------------------------------------------------
+  // Historial de cursos subidos manualmente — v0.5
+  // ---------------------------------------------------------
+  obtenerHistorialCursosManuales() {
+    return this._leerData().historialCursosManuales || [];
+  },
+  registrarHistorialCursoManual(entrada) {
+    const data = this._leerData();
+    if (!Array.isArray(data.historialCursosManuales)) data.historialCursosManuales = [];
+    data.historialCursosManuales.unshift(entrada);
+    data.historialCursosManuales = data.historialCursosManuales.slice(0, 50);
+    this._guardarData(data);
+    return entrada;
+  },
+  fechaHoy() {
+    return this._hoy();
   },
 
   // ---------------------------------------------------------

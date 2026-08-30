@@ -632,6 +632,23 @@ input { font-family: inherit; }
 }
 .btn-desinstalar:hover { background: var(--incorrecto-bg); }
 
+/* Historial de cursos subidos manualmente */
+.zona-historial { margin-top: 2rem; }
+.lista-historial-cursos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.tarjeta-historial {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--bg-tarjeta);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 0.9rem 1.2rem;
+}
+
 /* Estado vacío */
 .estado-vacio {
   text-align: center;

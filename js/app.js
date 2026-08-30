@@ -189,6 +189,9 @@ function enlazarEventosGlobales() {
 
   document.getElementById("btn-progreso").addEventListener("click", () => cambiarVista("progreso"));
   document.getElementById("btn-siguiente").addEventListener("click", () => siguientePregunta());
+  document.getElementById("btn-admin-profe").addEventListener("click", () => {
+    window.open("admin.html", "_blank");
+  });
   document.getElementById("btn-cambiar-jugador").addEventListener("click", () => {
     document.getElementById("app").classList.add("oculto");
     mostrarPantallaJugadores();
@@ -403,7 +406,30 @@ function renderizarPantallaInstalar() {
     zonaDemo.classList.add("oculto");
   }
 
+  // Historial de cursos subidos manualmente
+  const historial = Storage.obtenerHistorialCursosManuales();
+  const zonaHistorial = document.getElementById("zona-historial");
+  const listaHistorial = document.getElementById("lista-historial-cursos");
+  if (historial.length === 0) {
+    zonaHistorial.classList.add("oculto");
+  } else {
+    zonaHistorial.classList.remove("oculto");
+    listaHistorial.innerHTML = historial.map(h => `
+      <div class="tarjeta-historial">
+        <div class="curso-info">
+          <div class="curso-nombre">📤 ${h.nombre}</div>
+          <div class="curso-meta">${h.numPreguntas} preguntas · Autor: ${h.autor} · v${h.version} · Subido el ${formatearFecha(h.fecha)}</div>
+        </div>
+      </div>
+    `).join("");
+  }
+
   limpiarEstadoInstalacion();
+}
+
+function formatearFecha(fecha) {
+  if (!fecha) return "—";
+  return fecha.split("-").reverse().join("/");
 }
 
 function limpiarEstadoInstalacion() {
