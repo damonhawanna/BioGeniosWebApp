@@ -178,7 +178,15 @@ function cerrarDropdown() {
 // ---------------------------------------------------------------
 // Navegación de vistas
 // ---------------------------------------------------------------
+let eventosGlobalesEnlazados = false;
+let autoAvanceId = null;
+
 function enlazarEventosGlobales() {
+  // Solo enlazar una vez por carga de página: re-entrar a la app (cambiar de
+  // jugador) no debe acumular listeners duplicados que disparen varias veces.
+  if (eventosGlobalesEnlazados) return;
+  eventosGlobalesEnlazados = true;
+
   document.getElementById("btn-progreso").addEventListener("click", () => cambiarVista("progreso"));
   document.getElementById("btn-siguiente").addEventListener("click", () => siguientePregunta());
   document.getElementById("btn-cambiar-jugador").addEventListener("click", () => {
@@ -310,7 +318,7 @@ function seleccionarAlternativa(index) {
   const p = Estado.preguntaActual;
   const esCorrecta = p.alternativas[index].esCorrecta;
 
-  document.querySelectorAll(".alternativa").forEach((li, i) => {
+  document.querySelectorAll("#lista-alternativas .alternativa").forEach((li, i) => {
     li.classList.add("bloqueada");
     const emoji = li.querySelector(".emoji-resultado");
     if (p.alternativas[i].esCorrecta) {
@@ -526,6 +534,7 @@ function iniciarRondaFastTest() {
     return;
   }
 
+  clearTimeout(autoAvanceId);
   const ok = FastTest.iniciarRonda();
   if (!ok) {
     cambiarVista("sin-cursos");
@@ -595,8 +604,8 @@ function renderizarPreguntaFastTest() {
 }
 
 function responderFastTest(index) {
-  // Evitar doble click mientras se procesa
-  if (document.querySelector(".alternativa.bloqueada")) return;
+  // Evitar doble click mientras se procesa (solo dentro del Fast Test)
+  if (document.querySelector("#ft-lista-alternativas .alternativa.bloqueada")) return;
 
   const p = FastTest.preguntaActual();
   const indiceRonda = FastTest.ronda.indice;
@@ -631,7 +640,12 @@ function responderFastTest(index) {
   actualizarChipJugador();
 
   // Auto-avance: sin botón "Siguiente", reduce fricción al mínimo.
-  setTimeout(() => {
+  // Si el usuario abandona Fast Test o inicia otra ronda antes de que dispare
+  // el avance, cancelar el timeout para no continuar la ronda en segundo plano.
+  clearTimeout(autoAvanceId);
+  autoAvanceId = setTimeout(() => {
+    autoAvanceId = null;
+    if (Estado.vistaActiva !== "fasttest") return;
     if (resultado.evento) {
       mostrarEventoSorpresa(resultado.evento, () => continuarRondaOFinalizar());
     } else {
