@@ -60,7 +60,8 @@
     <div class="marca-mini">Bio<span>genios</span></div>
 
     <nav class="nav-principal">
-      <!-- Botones fijos -->
+      <!-- Fast Test: modo principal, máxima prioridad visual -->
+      <button class="btn-nav btn-fasttest" data-vista="fasttest">⚡ Fast Test</button>
       <button class="btn-nav" data-vista="libre">🔀 Práctica libre</button>
       <button class="btn-nav" data-vista="diario">📌 Pregunta del día</button>
 
@@ -79,6 +80,7 @@
     </nav>
 
     <div class="usuario-chip">
+      <span id="chip-xp" class="chip-xp" title="Experiencia total"></span>
       <span id="chip-racha" class="chip-racha" title="Racha de días"></span>
       <span id="chip-nombre">—</span>
       <button id="btn-progreso" class="btn-icono" title="Mi progreso">📊</button>
@@ -88,8 +90,60 @@
 
   <main class="contenido">
 
-    <!-- VISTA: QUIZ (práctica libre / curso / pregunta del día) -->
-    <section id="vista-quiz" class="vista">
+    <!-- ===== VISTA: FAST TEST (modo principal de gamificación) ===== -->
+    <section id="vista-fasttest" class="vista oculto">
+
+      <!-- Barra de progreso de la ronda (5 puntos) -->
+      <div class="progreso-ronda" id="progreso-ronda"><!-- generado por JS --></div>
+
+      <article class="ficha-especimen ficha-fasttest" id="ficha-fasttest">
+        <p class="eyebrow" id="ft-eyebrow">PREGUNTA 1 DE 5</p>
+        <h2 id="ft-texto-pregunta" class="texto-anim">Cargando…</h2>
+        <ul class="alternativas" id="ft-lista-alternativas"></ul>
+
+        <div class="feedback oculto" id="ft-caja-feedback">
+          <p id="ft-feedback-titulo"></p>
+          <p id="ft-feedback-texto" class="feedback-texto"></p>
+          <p id="ft-feedback-xp" class="feedback-xp oculto"></p>
+        </div>
+      </article>
+
+      <!-- Overlay de evento sorpresa -->
+      <div class="evento-sorpresa oculto" id="evento-sorpresa">
+        <div class="evento-tarjeta">
+          <p class="evento-emoji" id="evento-emoji">✨</p>
+          <p class="evento-titulo" id="evento-titulo"></p>
+          <p class="evento-detalle" id="evento-detalle"></p>
+        </div>
+      </div>
+
+      <!-- Pantalla de celebración (fin de ronda) -->
+      <div class="celebracion oculto" id="vista-celebracion">
+        <p class="celebracion-emoji">🎉</p>
+        <h2 class="celebracion-titulo" id="celebracion-titulo">¡Ronda completa!</h2>
+        <p class="celebracion-resultado" id="celebracion-resultado">4/5 correctas</p>
+        <p class="celebracion-frase" id="celebracion-frase"></p>
+
+        <div class="celebracion-stats">
+          <div class="stat-celebracion">
+            <span class="stat-valor" id="celebracion-xp">+0 XP</span>
+            <span class="stat-label">Ganado</span>
+          </div>
+          <div class="stat-celebracion">
+            <span class="stat-valor" id="celebracion-racha">🔥 0</span>
+            <span class="stat-label">Racha</span>
+          </div>
+        </div>
+
+        <div class="celebracion-insignias" id="celebracion-insignias"><!-- si hay nuevas --></div>
+
+        <button class="btn btn-primario btn-otra-ronda" id="btn-otra-ronda">Otra ronda (5 preguntas) →</button>
+        <button class="btn btn-texto" id="btn-celebracion-salir">Volver al inicio</button>
+      </div>
+    </section>
+
+    <!-- ----- VISTA: QUIZ (práctica libre / curso / pregunta del día) ----- -->
+    <section id="vista-quiz" class="vista oculto">
       <div class="quiz-encabezado">
         <p class="eyebrow" id="quiz-eyebrow">MÓDULO · TEMA</p>
         <button id="btn-siguiente" class="btn btn-texto">Siguiente pregunta ↻</button>
@@ -164,6 +218,8 @@
 <script src="js/storage.js"></script>
 <script src="js/cursos.js"></script>
 <script src="js/quiz.js"></script>
+<script src="js/gamificacion.js"></script>
+<script src="js/fasttest.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

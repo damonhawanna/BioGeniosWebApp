@@ -129,6 +129,9 @@ function actualizarChipJugador() {
   const chip = document.getElementById("chip-racha");
   chip.textContent = `🔥 ${racha.actual}`;
   chip.title = `Racha actual: ${racha.actual} día(s) · Mejor: ${racha.mejor}`;
+
+  const chipXP = document.getElementById("chip-xp");
+  chipXP.textContent = `⭐ ${Storage.obtenerXP()} XP`;
 }
 
 // ---------------------------------------------------------------
@@ -188,7 +191,7 @@ function enlazarEventosGlobales() {
   document.getElementById("btn-ir-instalar")?.addEventListener("click", () => cambiarVista("instalar"));
 }
 
-const TODAS_VISTAS = ["quiz", "sin-cursos", "instalar", "progreso"];
+const TODAS_VISTAS = ["fasttest", "quiz", "sin-cursos", "instalar", "progreso"];
 
 function cambiarVista(tipo, modulo = null) {
   Estado.vistaActiva = tipo;
@@ -206,6 +209,10 @@ function cambiarVista(tipo, modulo = null) {
   });
 
   switch (tipo) {
+    case "fasttest":
+      document.getElementById("vista-fasttest").classList.remove("oculto");
+      iniciarRondaFastTest();
+      break;
     case "libre":
     case "diario":
     case "curso":
@@ -507,4 +514,191 @@ function renderizarProgreso() {
       <span>${s.aciertos}/${s.total} (${Math.round((s.aciertos / s.total) * 100)}%)</span>
     </li>
   `).join("");
+}
+
+// =================================================================
+// FAST TEST — UI (v0.4)
+// =================================================================
+
+function iniciarRondaFastTest() {
+  if (Cursos.obtenerCursosInstalados().length === 0) {
+    cambiarVista("sin-cursos");
+    return;
+  }
+
+  const ok = FastTest.iniciarRonda();
+  if (!ok) {
+    cambiarVista("sin-cursos");
+    return;
+  }
+
+  document.getElementById("ficha-fasttest").classList.remove("oculto");
+  document.getElementById("vista-celebracion").classList.add("oculto");
+  document.getElementById("evento-sorpresa").classList.add("oculto");
+
+  renderizarProgresoRonda();
+  renderizarPreguntaFastTest();
+}
+
+function renderizarProgresoRonda() {
+  const cont = document.getElementById("progreso-ronda");
+  const total = FastTest.totalPreguntas();
+  const idx = FastTest.ronda.indice;
+
+  cont.innerHTML = "";
+  for (let i = 0; i < total; i++) {
+    const punto = document.createElement("div");
+    punto.className = "punto-progreso";
+    if (i === idx) punto.classList.add("actual");
+    cont.appendChild(punto);
+  }
+}
+
+function marcarPuntoProgreso(indice, esCorrecta) {
+  const puntos = document.querySelectorAll("#progreso-ronda .punto-progreso");
+  const punto = puntos[indice];
+  if (!punto) return;
+  punto.classList.remove("actual");
+  punto.classList.add(esCorrecta ? "completado-correcto" : "completado-incorrecto");
+}
+
+function renderizarPreguntaFastTest() {
+  const p = FastTest.preguntaActual();
+  const idx = FastTest.ronda.indice;
+  const total = FastTest.totalPreguntas();
+
+  document.getElementById("ft-eyebrow").textContent = `PREGUNTA ${idx + 1} DE ${total} · ${p.tema.toUpperCase()}`;
+
+  const titulo = document.getElementById("ft-texto-pregunta");
+  titulo.textContent = p.pregunta;
+  // Reinyectar la animación de entrada en cada pregunta nueva
+  titulo.classList.remove("texto-anim");
+  void titulo.offsetWidth; // fuerza reflow para reiniciar la animación CSS
+  titulo.classList.add("texto-anim");
+
+  document.getElementById("ft-caja-feedback").classList.add("oculto");
+  document.getElementById("ft-feedback-xp").classList.add("oculto");
+
+  const letras = ["A", "B", "C", "D", "E"];
+  const lista = document.getElementById("ft-lista-alternativas");
+  lista.innerHTML = p.alternativas.map((alt, i) => `
+    <li class="alternativa" data-index="${i}" tabindex="0" role="button">
+      <span class="marcador">${letras[i]}</span>
+      <span class="texto-alt">${alt.texto}</span>
+      <span class="emoji-resultado"></span>
+    </li>
+  `).join("");
+
+  lista.querySelectorAll(".alternativa").forEach(li => {
+    li.addEventListener("click", () => responderFastTest(parseInt(li.dataset.index, 10)));
+  });
+}
+
+function responderFastTest(index) {
+  // Evitar doble click mientras se procesa
+  if (document.querySelector(".alternativa.bloqueada")) return;
+
+  const p = FastTest.preguntaActual();
+  const indiceRonda = FastTest.ronda.indice;
+  const resultado = FastTest.responder(index);
+
+  // Pintar alternativas (igual lógica visual que el quiz normal)
+  document.querySelectorAll("#ft-lista-alternativas .alternativa").forEach((li, i) => {
+    li.classList.add("bloqueada");
+    const emoji = li.querySelector(".emoji-resultado");
+    if (p.alternativas[i].esCorrecta) {
+      li.classList.add("correcta"); emoji.textContent = "✅";
+    } else if (i === index) {
+      li.classList.add("incorrecta"); emoji.textContent = "❌";
+    }
+  });
+
+  marcarPuntoProgreso(indiceRonda, resultado.esCorrecta);
+
+  // Feedback inmediato
+  const titulo = resultado.frasePorRacha
+    ? `${resultado.esCorrecta ? "✅" : "❌"} ${resultado.frasePorRacha}`
+    : (resultado.esCorrecta ? "✅ ¡Correcto!" : "❌ No es correcto");
+
+  document.getElementById("ft-feedback-titulo").textContent = titulo;
+  document.getElementById("ft-feedback-texto").textContent = p.explicacion;
+  document.getElementById("ft-caja-feedback").classList.remove("oculto");
+
+  const feedbackXP = document.getElementById("ft-feedback-xp");
+  feedbackXP.textContent = `+${resultado.xpGanado} XP`;
+  feedbackXP.classList.remove("oculto");
+
+  actualizarChipJugador();
+
+  // Auto-avance: sin botón "Siguiente", reduce fricción al mínimo.
+  setTimeout(() => {
+    if (resultado.evento) {
+      mostrarEventoSorpresa(resultado.evento, () => continuarRondaOFinalizar());
+    } else {
+      continuarRondaOFinalizar();
+    }
+  }, MS_AUTO_AVANCE);
+}
+
+function continuarRondaOFinalizar() {
+  const hayMas = FastTest.avanzar();
+  if (hayMas) {
+    avanzarPuntoActual();
+    renderizarPreguntaFastTest();
+  } else {
+    mostrarCelebracion();
+  }
+}
+
+function avanzarPuntoActual() {
+  const puntos = document.querySelectorAll("#progreso-ronda .punto-progreso");
+  puntos.forEach(p => p.classList.remove("actual"));
+  const siguiente = puntos[FastTest.ronda.indice];
+  if (siguiente && !siguiente.classList.contains("completado-correcto") && !siguiente.classList.contains("completado-incorrecto")) {
+    siguiente.classList.add("actual");
+  }
+}
+
+function mostrarEventoSorpresa(evento, callback) {
+  const overlay = document.getElementById("evento-sorpresa");
+  document.getElementById("evento-emoji").textContent = evento.emoji;
+  document.getElementById("evento-titulo").textContent = evento.titulo;
+  document.getElementById("evento-detalle").textContent = evento.detalle;
+
+  overlay.classList.remove("oculto");
+  actualizarChipJugador(); // refleja XP extra si aplica
+
+  setTimeout(() => {
+    overlay.classList.add("oculto");
+    callback();
+  }, MS_EVENTO_SORPRESA);
+}
+
+function mostrarCelebracion() {
+  const resumen = FastTest.finalizarRonda();
+
+  document.getElementById("ficha-fasttest").classList.add("oculto");
+  document.getElementById("vista-celebracion").classList.remove("oculto");
+
+  const pct = Math.round((resumen.aciertos / resumen.total) * 100);
+  document.getElementById("celebracion-titulo").textContent =
+    pct === 100 ? "¡Ronda perfecta!" : "¡Ronda completa!";
+  document.getElementById("celebracion-resultado").textContent = `${resumen.aciertos}/${resumen.total} correctas`;
+  document.getElementById("celebracion-frase").textContent = resumen.frase;
+  document.getElementById("celebracion-xp").textContent = `+${resumen.xpGanado} XP`;
+  document.getElementById("celebracion-racha").textContent = `🔥 ${resumen.racha.actual}`;
+
+  const contInsignias = document.getElementById("celebracion-insignias");
+  if (resumen.insigniasNuevas.length > 0) {
+    contInsignias.innerHTML = resumen.insigniasNuevas.map(ins => `
+      <div class="insignia-nueva">${ins.emoji} ${ins.nombre}</div>
+    `).join("");
+  } else {
+    contInsignias.innerHTML = "";
+  }
+
+  actualizarChipJugador();
+
+  document.getElementById("btn-otra-ronda").onclick = () => iniciarRondaFastTest();
+  document.getElementById("btn-celebracion-salir").onclick = () => cambiarVista("libre");
 }

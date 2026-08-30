@@ -32,10 +32,18 @@ const Storage = {
     const raw = localStorage.getItem(BIOGENIOS_DATA_KEY);
     if (raw) {
       const data = JSON.parse(raw);
-      // Migración suave v0.2 -> v0.3: si ya existía BIOGENIOS_DATA pero sin cursosInstalados, se agrega.
+      let huboMigracion = false;
       if (!Array.isArray(data.cursosInstalados)) {
         data.cursosInstalados = [];
-        data.version = "0.3";
+        huboMigracion = true;
+      }
+      data.jugadores.forEach(j => {
+        if (typeof j.xp !== "number") { j.xp = 0; huboMigracion = true; }
+        if (!Array.isArray(j.insignias)) { j.insignias = []; huboMigracion = true; }
+        if (!Array.isArray(j.coleccionables)) { j.coleccionables = []; huboMigracion = true; }
+      });
+      if (huboMigracion) {
+        data.version = "0.4";
         this._guardarData(data);
       }
       return data;
@@ -78,6 +86,9 @@ const Storage = {
     jugadorMigrado.progreso = progresoViejo;
     if (diarioViejo) jugadorMigrado.diario = diarioViejo;
     jugadorMigrado.sesiones = sesionesViejas;
+    jugadorMigrado.xp = 0;
+    jugadorMigrado.insignias = [];
+    jugadorMigrado.coleccionables = [];
 
     dataNueva.jugadores.push(jugadorMigrado);
     dataNueva.jugadorActivoId = jugadorMigrado.id;
@@ -100,7 +111,10 @@ const Storage = {
       progreso: {},                                  // { [modulo]: {aciertos, intentos} }
       diario: { fecha: null, resuelta: false, preguntaId: null },
       sesiones: [],
-      racha: { actual: 0, mejor: 0, ultimaFecha: null }
+      racha: { actual: 0, mejor: 0, ultimaFecha: null },
+      xp: 0,
+      insignias: [],        // ids de insignias desbloqueadas
+      coleccionables: []    // ids de elementos de colección obtenidos
     };
   },
 
@@ -255,5 +269,52 @@ const Storage = {
     const data = this._leerData();
     data.cursosInstalados = data.cursosInstalados.filter(c => c.id !== idCurso);
     this._guardarData(data);
+  },
+
+  // ---------------------------------------------------------
+  // Gamificación: XP, insignias, coleccionables — v0.4
+  // ---------------------------------------------------------
+  agregarXP(cantidad) {
+    const data = this._leerData();
+    const jugador = data.jugadores.find(j => j.id === data.jugadorActivoId);
+    if (!jugador) return 0;
+    jugador.xp += cantidad;
+    this._guardarData(data);
+    return jugador.xp;
+  },
+  obtenerXP() {
+    const jugador = this.obtenerJugadorActivo();
+    return jugador ? jugador.xp : 0;
+  },
+  desbloquearInsignia(idInsignia) {
+    const data = this._leerData();
+    const jugador = data.jugadores.find(j => j.id === data.jugadorActivoId);
+    if (!jugador) return false;
+    if (jugador.insignias.includes(idInsignia)) return false; // ya la tenía
+    jugador.insignias.push(idInsignia);
+    this._guardarData(data);
+    return true; // es nueva
+  },
+  obtenerInsignias() {
+    const jugador = this.obtenerJugadorActivo();
+    return jugador ? jugador.insignias : [];
+  },
+  agregarColeccionable(idItem) {
+    const data = this._leerData();
+    const jugador = data.jugadores.find(j => j.id === data.jugadorActivoId);
+    if (!jugador) return false;
+    if (jugador.coleccionables.includes(idItem)) return false; // ya lo tenía
+    jugador.coleccionables.push(idItem);
+    this._guardarData(data);
+    return true;
+  },
+  obtenerColeccionables() {
+    const jugador = this.obtenerJugadorActivo();
+    return jugador ? jugador.coleccionables : [];
+  },
+  contarPreguntasRespondidasTotal() {
+    const jugador = this.obtenerJugadorActivo();
+    if (!jugador) return 0;
+    return Object.values(jugador.progreso).reduce((acc, m) => acc + m.intentos, 0);
   }
 };
