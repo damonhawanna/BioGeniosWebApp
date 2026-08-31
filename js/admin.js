@@ -532,6 +532,255 @@ function letraOIndiceAIndex(valor, longitud) {
 }
 
 /* =========================================================
+   Carga masiva desde PDF (digital, con PDF.js)
+   ---------------------------------------------------------
+   Flujo:
+   1) Se extrae el texto de todas las páginas con PDF.js.
+   2) Se intenta detectar la clave de respuestas (p.ej. "1-B 2-C").
+   3) Se segmentan preguntas por patrones (números y alternativas A-E).
+   4) Se abre una pantalla de revisión obligatoria antes de agregar.
+   ========================================================= */
+const RevisionPdf = { candidatas: [] };
+
+function escHTML(s) {
+  return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function cargarPdf(file) {
+  const estado = $id("estado-pdf");
+  estado.classList.add("oculto");
+
+  if (typeof pdfjsLib === "undefined") {
+    mensajeElemento(estado, "PDF.js no está disponible (¿sin conexión?). Probá con Excel o JSON.", "error");
+    return;
+  }
+
+  mensajeElemento(estado, "⏳ Extrayendo texto del PDF…", "exito");
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+  const lector = new FileReader();
+  lector.onerror = () => mensajeElemento(estado, "No se pudo leer el archivo.", "error");
+  lector.onload = async () => {
+    try {
+      const pdf = await pdfjsLib.getDocument({ data: lector.result }).promise;
+      const texto = await pdfATexto(pdf);
+      if (!texto.trim()) {
+        mensajeElemento(estado, "No se extrajo texto. Es probable que el PDF esté escaneado (imágenes) — eso todavía no está soportado.", "error");
+        return;
+      }
+
+      const clave = detectarClave(texto);
+      const candidatas = segmentarPreguntas(texto, clave);
+
+      if (candidatas.length === 0) {
+        mensajeElemento(estado, "No se detectaron preguntas con el patrón esperado (numeradas con alternativas A-D). Revisá el PDF y probá de nuevo.", "error");
+        return;
+      }
+
+      abrirRevisionPdf(candidatas, clave);
+      mensajeElemento(estado, "PDF procesado. Revisá las preguntas detectadas.", "exito");
+    } catch (e) {
+      mensajeElemento(estado, `Error procesando el PDF: ${e.message}`, "error");
+    }
+  };
+  lector.readAsArrayBuffer(file);
+}
+
+async function pdfATexto(pdf) {
+  let texto = "";
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const pagina = await pdf.getPage(p);
+    const contenido = await pagina.getTextContent();
+    let trozo = "";
+    let ultimaY = null;
+    contenido.items.forEach(item => {
+      const y = item.transform[5];
+      if (ultimaY !== null && Math.abs(y - ultimaY) > 2) trozo += "\n";
+      trozo += " " + item.str;
+      ultimaY = y;
+    });
+    texto += trozo.replace(/ +/g, " ").trim() + "\n\n";
+  }
+  return texto;
+}
+
+function detectarClave(texto) {
+  const re = /(?:^|[\s,;])(\d{1,3})\s*[.)\-–—:]\s*([A-Ea-e])(?=[\s,;]|$)/gm;
+  const mapa = {};
+  let m, coincidencias = 0;
+  while ((m = re.exec(texto)) !== null) {
+    const num = parseInt(m[1], 10);
+    const letra = m[2].toUpperCase();
+    if (num >= 1 && num <= 300) {
+      mapa[num] = letra;
+      coincidencias++;
+    }
+  }
+  return coincidencias >= 5 ? mapa : null;
+}
+
+function segmentarPreguntas(texto, clave) {
+  const RE_INICIO = /^(\d{1,3})\s*[.)\-–—]\s+(.+)$/;
+  const RE_ALTERNATIVA = /^([A-Ea-e])\s*[.)\]:\-–—]\s*(.*)$/;
+
+  const lineas = texto
+    .replace(/\r/g, "")
+    .split("\n")
+    .map(l => l.replace(/\u00A0/g, " ").trim())
+    .filter(l => l.length > 0);
+
+  const preguntas = [];
+  let actual = null;
+
+  const finalizar = () => {
+    if (actual && actual.pregunta.trim() && actual.alternativas.length >= 4) {
+      preguntas.push(actual);
+    }
+    actual = null;
+  };
+
+  for (const linea of lineas) {
+    const mInicio = linea.match(RE_INICIO);
+    const mAlt = linea.match(RE_ALTERNATIVA);
+
+    if (mInicio) {
+      finalizar();
+      actual = {
+        num: parseInt(mInicio[1], 10),
+        pregunta: mInicio[2],
+        alternativas: [],
+        correctaIndex: null
+      };
+    } else if (mAlt && actual) {
+      actual.alternativas.push(mAlt[2].trim());
+    } else if (actual) {
+      if (actual.alternativas.length === 0) {
+        actual.pregunta += " " + linea;   // continuación del enunciado
+      } else {
+        actual.alternativas[actual.alternativas.length - 1] += " " + linea; // continuación de la última alternativa
+      }
+    }
+  }
+  finalizar();
+
+  // Aplicar la clave de respuestas cuando existe
+  if (clave) {
+    preguntas.forEach(p => {
+      const letra = clave[p.num];
+      if (letra) {
+        const idx = letra.charCodeAt(0) - 65;
+        if (idx >= 0 && idx < p.alternativas.length) p.correctaIndex = idx;
+      }
+    });
+  }
+
+  return preguntas;
+}
+
+/* =========================================================
+   Pantalla de revisión del PDF
+   ========================================================= */
+function abrirRevisionPdf(candidatas, clave) {
+  RevisionPdf.candidatas = candidatas.map(c => ({
+    num: c.num,
+    pregunta: c.pregunta,
+    alternativas: [...c.alternativas],
+    correctaIndex: c.correctaIndex,
+    descartada: false
+  }));
+  $id("estado-revision-pdf").classList.add("oculto");
+  renderRevisionPdf();
+  $id("visor-revision-pdf").classList.remove("oculto");
+}
+
+function renderRevisionPdf() {
+  const lista = $id("revision-lista");
+  const titulo = $id("revision-titulo");
+  const activas = RevisionPdf.candidatas.filter(c => !c.descartada).length;
+  titulo.textContent = `${activas} de ${RevisionPdf.candidatas.length} pregunta(s) pendientes de revisión`;
+  lista.innerHTML = "";
+
+  RevisionPdf.candidatas.forEach((c, i) => {
+    const tarjeta = document.createElement("div");
+    tarjeta.className = "revision-tarjeta" + (c.descartada ? " descartada" : "");
+
+    tarjeta.innerHTML = `
+      <div class="revision-cab">
+        <span class="revision-num">Q${c.num || i + 1}</span>
+        <label class="revision-descartar">
+          <input type="checkbox" data-rol="descartar" data-i="${i}" ${c.descartada ? "checked" : ""}> Descartar
+        </label>
+      </div>
+      <label class="campo">
+        <span class="campo-label">Enunciado</span>
+        <textarea data-rol="pregunta" data-i="${i}" rows="2">${escHTML(c.pregunta)}</textarea>
+      </label>
+      <div class="revision-alt-titulo">Alternativas</div>
+      <div class="alternativas-editor">
+        ${c.alternativas.map((alt, j) => `
+          <div class="alternativa-fila">
+            <input type="radio" name="rev-correcta-${i}" data-rol="correcta" data-i="${i}" value="${j}"
+              ${c.correctaIndex === j ? "checked" : ""}>
+            <input type="text" class="input-alternativa" data-rol="alt" data-i="${i}" data-j="${j}" value="${escHTML(alt)}">
+          </div>
+        `).join("")}
+      </div>
+    `;
+
+    lista.appendChild(tarjeta);
+  });
+}
+
+function agregarRevisionAlCurso() {
+  const estado = $id("estado-revision-pdf");
+  let agregadas = 0;
+  const errores = [];
+
+  RevisionPdf.candidatas.forEach((c, i) => {
+    if (c.descartada) return;
+    const pregunta = (c.pregunta || "").trim();
+    const alts = (c.alternativas || []).map(a => (a || "").trim()).filter(Boolean);
+
+    if (!pregunta) { errores.push(`Q${c.num || i + 1}: sin enunciado`); return; }
+    if (alts.length < 4) { errores.push(`Q${c.num || i + 1}: menos de 4 alternativas`); return; }
+    if (c.correctaIndex === null || c.correctaIndex < 0 || c.correctaIndex >= alts.length) {
+      errores.push(`Q${c.num || i + 1}: sin respuesta correcta marcada`);
+      return;
+    }
+
+    Estado.contadorId += 1;
+    Estado.preguntas.push({
+      pregunta,
+      alternativas: alts,
+      correctaIndex: c.correctaIndex,
+      tema: "",
+      explicacion: "",
+      _id: "pdf_" + Estado.contadorId
+    });
+    agregadas += 1;
+  });
+
+  renderListaPreguntas();
+
+  if (errores.length) {
+    mensajeElemento(estado, `${agregadas} agregada(s), ${errores.length} sin agregar. Primer aviso: ${errores[0]}.`, agregadas > 0 ? "exito" : "error");
+  } else {
+    cerrarRevisionPdf();
+    confirmar("¡Listo!", `${agregadas} preguntas agregadas al curso.`, () => {});
+  }
+}
+
+function quitarDescartadas() {
+  RevisionPdf.candidatas = RevisionPdf.candidatas.filter(c => !c.descartada);
+  renderRevisionPdf();
+}
+
+function cerrarRevisionPdf() {
+  $id("visor-revision-pdf").classList.add("oculto");
+  RevisionPdf.candidatas = [];
+}
+
+/* =========================================================
    Borrador (localStorage)
    ========================================================= */
 function asegurarIdCurso() {
@@ -720,6 +969,41 @@ function init() {
     const file = e.target.files[0];
     if (file) cargarExcel(file);
     e.target.value = "";
+  });
+
+  // PDF
+  $id("input-pdf").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file) cargarPdf(file);
+    e.target.value = "";
+  });
+
+  // Visor de revisión PDF
+  const revisionLista = $id("revision-lista");
+  revisionLista.addEventListener("input", (e) => {
+    const el = e.target;
+    const rol = el.dataset.rol;
+    const c = RevisionPdf.candidatas[parseInt(el.dataset.i, 10)];
+    if (!c) return;
+    if (rol === "pregunta") c.pregunta = el.value;
+    if (rol === "alt") c.alternativas[parseInt(el.dataset.j, 10)] = el.value;
+  });
+  revisionLista.addEventListener("change", (e) => {
+    const el = e.target;
+    const rol = el.dataset.rol;
+    const c = RevisionPdf.candidatas[parseInt(el.dataset.i, 10)];
+    if (!c) return;
+    if (rol === "correcta") c.correctaIndex = parseInt(el.value, 10);
+    if (rol === "descartar") {
+      c.descartada = el.checked;
+      renderRevisionPdf();
+    }
+  });
+  $id("btn-revision-agregar").addEventListener("click", agregarRevisionAlCurso);
+  $id("btn-revision-limpiar").addEventListener("click", quitarDescartadas);
+  $id("btn-revision-cancelar").addEventListener("click", cerrarRevisionPdf);
+  $id("visor-revision-pdf").addEventListener("click", (e) => {
+    if (e.target === $id("visor-revision-pdf")) cerrarRevisionPdf();
   });
 
   // Borrador

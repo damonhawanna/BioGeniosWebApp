@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link rel="stylesheet" href="css/admin.css">
 </head>
 <body>
@@ -81,7 +82,12 @@
       <div class="sidebar-seccion">
         <p class="eyebrow">Carga masiva</p>
 
-        <p class="texto-ayuda">📊 Desde Excel: descargá la plantilla, completala y volvela a subir.</p>
+        <p class="texto-ayuda">📄 Desde PDF (solo digital, sin escaneados por ahora): se detectan preguntas y pasan a una pantalla de revisión.</p>
+        <label class="btn btn-secundario btn-ancho" for="input-pdf">📄 Cargar PDF</label>
+        <input type="file" id="input-pdf" accept=".pdf" class="oculto">
+        <div id="estado-pdf" class="estado-json oculto"></div>
+
+        <p class="texto-ayuda texto-ayuda-separado">📊 Desde Excel: descargá la plantilla, completala y volvela a subir.</p>
         <button class="btn btn-ancho-texto" id="btn-descargar-plantilla" type="button">⬇️ Descargar plantilla (.xlsx)</button>
         <label class="btn btn-secundario btn-ancho" for="input-excel">📊 Cargar Excel</label>
         <input type="file" id="input-excel" accept=".xlsx,.xls" class="oculto">
@@ -167,6 +173,22 @@
 
     </main>
 
+  </div>
+</div>
+
+<!-- ============ VISOR: REVISIÓN DE PDF ============ -->
+<div id="visor-revision-pdf" class="modal-overlay oculto">
+  <div class="revision-pdf-caja">
+    <p class="eyebrow">📄 Revisión de preguntas detectadas</p>
+    <h2 id="revision-titulo">Preguntas detectadas</h2>
+    <p class="texto-ayuda">Corregí el texto de cada pregunta, marcá con el radio la respuesta correcta o descartá las que no correspondan. La detección automática nunca es perfecta.</p>
+    <div id="estado-revision-pdf" class="estado-json oculto"></div>
+    <div id="revision-lista" class="revision-lista"><!-- generado por JS --></div>
+    <div class="modal-acciones revision-acciones">
+      <button class="btn btn-secundario" id="btn-revision-cancelar">Descartar todo</button>
+      <button class="btn btn-texto" id="btn-revision-limpiar">🗑 Quitar descartadas</button>
+      <button class="btn btn-primario" id="btn-revision-agregar">Agregar al curso ✓</button>
+    </div>
   </div>
 </div>
 

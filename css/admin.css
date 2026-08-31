@@ -455,6 +455,79 @@ input, textarea { font-family: inherit; }
 }
 
 /* =========================================================
+   VISOR DE REVISIÓN PDF
+   ========================================================= */
+.revision-pdf-caja {
+  background: var(--bg-tarjeta);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  padding: 1.6rem 1.8rem 1.2rem;
+  max-width: 720px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--sombra);
+}
+.revision-pdf-caja h2 {
+  font-family: var(--fuente-display);
+  margin: 0 0 0.4rem 0;
+}
+.revision-pdf-caja .estado-json { margin-bottom: 0.8rem; }
+
+.revision-lista {
+  overflow-y: auto;
+  padding-right: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  flex: 1;
+}
+.revision-tarjeta {
+  background: var(--bg-tarjeta-2);
+  border: 1px solid var(--linea);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+}
+.revision-tarjeta.descartada {
+  opacity: 0.4;
+}
+.revision-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.revision-num {
+  font-weight: 700;
+  color: var(--ambar);
+  font-size: 0.85rem;
+}
+.revision-descartar {
+  font-size: 0.82rem;
+  color: var(--texto-tenue);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+}
+.revision-descartar input { accent-color: var(--incorrecto); }
+.revision-alt-titulo {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--texto-tenue);
+  margin: 0.4rem 0 0.3rem 0;
+}
+.revision-tarjeta .alternativas-editor { margin-bottom: 0.2rem; }
+.revision-acciones {
+  padding-top: 1rem;
+  margin-top: 0.8rem;
+  border-top: 1px solid var(--linea);
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+/* =========================================================
    RESPONSIVE
    ========================================================= */
 @media (max-width: 860px) {
